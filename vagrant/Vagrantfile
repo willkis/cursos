@@ -1,0 +1,91 @@
+#$script_mysql = <<-SCRIPT
+#	apt-get update && \
+#	apt-get install -y mysql-server && \
+#	mysql -e "create user 'willian'@'%';"
+#	SCRIPT
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/hirsute64"
+#  config.vm.provision "ansible" do |ansible|
+#    ansible.verbose = "v"
+#    ansible.playbook = "playbook.yml"
+#    ansible.inventory_path = "/home/willian/cursos/vagrant/configs"
+#    ansible.groups = {
+#      "webservers" => ["192.168.50.52"],
+#      "databases"  => ["192.168.50.53"]
+#    }
+#  end
+
+  config.vm.define "wordpress" do |wordpress|
+    wordpress.vm.provider "virtualbox" do |vb|
+            vb.memory = 1024
+            vb.cpus = 2
+            vb.name = "Wordpress"
+    end
+   wordpress.vm.network "forwarded_port", guest: 80, host: 8080
+   wordpress.vm.network "public_network", ip: "192.168.1.102"
+   wordpress.vm.provision "shell", inline: "cat /vagrant/configs/id_rsa.pub >> .ssh/authorized_keys"
+   wordpress.vm.provision "shell", inline: "apt-get update && apt-get -y install apache2 php php-mysql mariadb-server"
+
+
+  end
+
+
+
+
+#  config.vm.define "mysqldb" do |mysql|
+
+#   mysql.vm.network "forwarded_port", guest: 3306, host: 30306
+#  mysql.vm.network "public_network"
+#  mysql.vm.network "private_network", type: "dhcp"
+#   mysql.vm.network "private_network", ip: "192.168.50.50"
+#   mysql.vm.provision "shell", inline: $script_mysql
+#   mysql.vm.provision "shell", inline: "cat /home/vagrant/configs/mysqld.cnf > /etc/mysql/mysql.conf.d/mysqld.cnf"
+#   mysql.vm.provision "shell", inline: "service mysql restart"
+#   mysql.vm.synced_folder "/home/willian/cursos/vagrant/configs", "/home/vagrant/configs"
+#   mysql.vm.synced_folder "/home/willian/cursos/vagrant/", "/vagrant", disabled: true
+#  end
+
+  config.vm.define "webserver" do |web|
+    web.vm.provider "virtualbox" do |vb|
+            vb.memory = 512
+            vb.cpus = 1
+            vb.name = "ununtu-webserver"
+    end
+   web.vm.network "forwarded_port", guest: 8888, host: 8888
+   web.vm.network "private_network", ip: "192.168.50.52"
+   web.vm.provision "shell", inline: "cat /vagrant/configs/id_rsa.pub >> .ssh/authorized_keys"
+   web.vm.provision "shell", inline: "apt-get update && apt-get -y install puppet"
+
+    web.vm.provision "puppet" do |puppet|
+     puppet.manifests_path = "./configs/manifests"
+     puppet.manifest_file = "webserver.pp"
+    end
+
+  end
+
+  config.vm.define "database" do |db|
+    db.vm.provider "virtualbox" do |vb|
+            vb.memory = 1024
+            vb.cpus = 1
+            vb.name = "ununtu-mysql"
+    end
+   db.vm.network "private_network", ip: "192.168.50.53"
+   db.vm.provision "shell", inline: "cat /vagrant/configs/id_rsa.pub >> .ssh/authorized_keys"
+
+
+  end
+
+  config.vm.define "aulaansible" do |aulaansible|
+    aulaansible.vm.provider "virtualbox" do |vb|
+            vb.memory = 1024
+            vb.cpus = 2
+            vb.name = "aulaansible"
+    end
+   aulaansible.vm.network "forwarded_port", guest: 80, host: 8880
+   aulaansible.vm.network "public_network", ip: "192.168.1.103"
+   aulaansible.vm.provision "shell", inline: "cat /vagrant/configs/id_rsa.pub >> .ssh/authorized_keys"
+  end
+
+
+end

@@ -1,0 +1,7 @@
+---
+wp_username: willian
+wp_db_name: wordpress_db
+wp_user_password: 12345
+wp_installation_dir: '/var/www/wordpress'
+wp_webserver_ip: '192.168.1.103'
+src_conf_dir: '/home/willian/cursos/ansible/files'
